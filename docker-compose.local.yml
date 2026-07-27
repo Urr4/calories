@@ -1,0 +1,32 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Lokaler Betrieb / Entwicklung — läuft komplett ohne NAS und ohne
+# Internetzugriff (Open Food Facts läuft im Stub-Modus).
+#
+# Start:  docker compose -f docker-compose.local.yml up --build
+# Stop:   docker compose -f docker-compose.local.yml down
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: calories:local
+    environment:
+      PORT: "3003"
+      DB_PATH: /data/calories.db
+      OFF_MODE: stub
+    volumes:
+      - calories-local-data:/data
+    ports:
+      - "3003:3003"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3003/api/persons"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  calories-local-data:
+    driver: local

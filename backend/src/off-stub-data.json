@@ -1,0 +1,47 @@
+[
+  {
+    "barcode": "4000417025005",
+    "name": "Haferflocken Zart",
+    "calories_per_100g": 372,
+    "protein_per_100g": 13.5,
+    "fat_per_100g": 7,
+    "carbs_per_100g": 58,
+    "fiber_per_100g": 10
+  },
+  {
+    "barcode": "4104420101019",
+    "name": "Vollmilch 3,5%",
+    "calories_per_100g": 64,
+    "protein_per_100g": 3.3,
+    "fat_per_100g": 3.6,
+    "carbs_per_100g": 4.7,
+    "fiber_per_100g": 0
+  },
+  {
+    "barcode": "4311501569818",
+    "name": "Vollkornbrot",
+    "calories_per_100g": 216,
+    "protein_per_100g": 7.5,
+    "fat_per_100g": 1.9,
+    "carbs_per_100g": 38,
+    "fiber_per_100g": 7.2
+  },
+  {
+    "barcode": "40111700",
+    "name": "Banane",
+    "calories_per_100g": 89,
+    "protein_per_100g": 1.1,
+    "fat_per_100g": 0.3,
+    "carbs_per_100g": 22.8,
+    "fiber_per_100g": 2.6
+  },
+  {
+    "barcode": "4008400301569",
+    "name": "Naturjoghurt 3,5%",
+    "calories_per_100g": 66,
+    "protein_per_100g": 3.5,
+    "fat_per_100g": 3.5,
+    "carbs_per_100g": 4.7,
+    "fiber_per_100g": 0
+  }
+]
