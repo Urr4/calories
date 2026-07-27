@@ -17,6 +17,7 @@ async function main() {
   app.use('/api/meals', require('./routes/meals'));
   app.use('/api/entries', require('./routes/entries'));
   app.use('/api/summary', require('./routes/summary'));
+  app.use('/api/off-config', require('./routes/off-config'));
 
   // Serve the built frontend (production/Docker image); harmless if the dist
   // folder doesn't exist yet during local backend-only development.

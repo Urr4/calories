@@ -17,13 +17,15 @@ import {
 import PersonIcon from '@mui/icons-material/Person';
 import AddIcon from '@mui/icons-material/Add';
 import TuneIcon from '@mui/icons-material/Tune';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { usePersonContext } from '../context/PersonContext';
 
 interface Props {
   onOpenTargets: () => void;
+  onOpenOffConfig: () => void;
 }
 
-export default function UserMenu({ onOpenTargets }: Props) {
+export default function UserMenu({ onOpenTargets, onOpenOffConfig }: Props) {
   const { persons, activePerson, setActivePersonId, createPerson } = usePersonContext();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -86,6 +88,13 @@ export default function UserMenu({ onOpenTargets }: Props) {
             <AddIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText>Neuer Nutzer</ListItemText>
+        </MenuItem>
+        <Divider />
+        <MenuItem onClick={() => { close(); onOpenOffConfig(); }}>
+          <ListItemIcon>
+            <SettingsIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Open Food Facts Zugang</ListItemText>
         </MenuItem>
       </Menu>
 

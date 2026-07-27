@@ -63,3 +63,17 @@ export const summaryApi = {
   get: (personId: string, date: string) =>
     api.get<Summary>('/summary', { params: { personId, date } }).then((r) => r.data),
 };
+
+export interface OffConfigStatus {
+  configured: boolean;
+  username?: string;
+  appUuid?: string;
+  authenticatedAt?: string | null;
+}
+
+export const offConfigApi = {
+  get: () => api.get<OffConfigStatus>('/off-config').then((r) => r.data),
+  save: (username: string, password: string) =>
+    api.post<OffConfigStatus>('/off-config', { username, password }).then((r) => r.data),
+  remove: () => api.delete('/off-config'),
+};

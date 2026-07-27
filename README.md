@@ -45,6 +45,22 @@ Im Backend steuert die Env-Variable `OFF_MODE` den Open-Food-Facts-Zugriff:
   beantwortet – funktioniert komplett offline, ideal für lokale Entwicklung.
 - `live`: echte Anfrage an `world.openfoodfacts.org`.
 
+### Open Food Facts Zugang (authentifizierte Anfragen)
+
+Über das Benutzer-Menü oben rechts → "Open Food Facts Zugang" kann der eigene
+Open-Food-Facts-Benutzername und das Passwort hinterlegt werden. Beim
+Speichern führt das Backend einen initialen Login gegen `/cgi/auth.pl` aus
+(`POST https://world.openfoodfacts.org/cgi/auth.pl`) und speichert das
+zurückgegebene Session-Cookie in der SQLite-Datenbank (Tabelle `off_config`).
+Dieses Cookie wird zusammen mit einem festen `User-Agent`
+(`Calories/0.0.1 (schubert.inf@gmail.com)`) sowie `app_name=Calories`,
+`app_version=0.0.1` und einem einmalig generierten, gesalzenen `app_uuid` bei
+allen weiteren Open-Food-Facts-Anfragen mitgeschickt. Passwort und Cookie
+verlassen das Backend nie – die Konfigurationsseite bekommt nur Status
+(verbunden/nicht verbunden, Benutzername) zurück. Ohne hinterlegte
+Zugangsdaten funktionieren Barcode-Lookups weiterhin unauthentifiziert (Open
+Food Facts erlaubt das für Lesezugriffe).
+
 `DB_PATH` steuert den Speicherort der SQLite-Datei (Default:
 `backend/data/calories.db`).
 

@@ -22,6 +22,7 @@ import BulletGraph from '../components/BulletGraph';
 import AddSheet from '../components/AddSheet';
 import UserMenu from '../components/UserMenu';
 import TargetsDialog from '../components/TargetsDialog';
+import OffConfigDialog from '../components/OffConfigDialog';
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -33,6 +34,7 @@ export default function TodayPage() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [targetsOpen, setTargetsOpen] = useState(false);
+  const [offConfigOpen, setOffConfigOpen] = useState(false);
   const date = today();
 
   const refresh = useCallback(() => {
@@ -57,9 +59,14 @@ export default function TodayPage() {
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
           <Typography variant="h6">Heute</Typography>
-          <UserMenu onOpenTargets={() => setTargetsOpen(true)} />
+          <UserMenu
+            onOpenTargets={() => setTargetsOpen(true)}
+            onOpenOffConfig={() => setOffConfigOpen(true)}
+          />
         </Toolbar>
       </AppBar>
+
+      <OffConfigDialog open={offConfigOpen} onClose={() => setOffConfigOpen(false)} />
 
       {loading && (
         <Typography sx={{ p: 3 }} color="text.secondary">

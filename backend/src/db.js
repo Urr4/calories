@@ -72,6 +72,20 @@ function migrate() {
     CREATE INDEX IF NOT EXISTS idx_log_entries_person_date ON log_entries(person_id, entry_date);
     CREATE INDEX IF NOT EXISTS idx_log_entries_person_item ON log_entries(person_id, item_type, item_id);
     CREATE INDEX IF NOT EXISTS idx_meal_ingredients_meal ON meal_ingredients(meal_id);
+
+    -- Single-row table holding the Open Food Facts account used to make
+    -- authenticated requests to the API (username/password entered on the
+    -- config page, plus the session cookie obtained from the initial login
+    -- request and a per-installation app_uuid sent with every request).
+    CREATE TABLE IF NOT EXISTS off_config (
+      id              TEXT PRIMARY KEY DEFAULT 'default',
+      username        TEXT,
+      password        TEXT,
+      app_uuid        TEXT,
+      session_cookie  TEXT,
+      authenticated_at TEXT,
+      updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
   saveDb();
 }

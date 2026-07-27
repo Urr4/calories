@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import EditIcon from '@mui/icons-material/Edit';
 import CloseIcon from '@mui/icons-material/Close';
 import type { Food, Meal, MealSlot } from '../types';
 import { foodsApi, mealsApi, entriesApi } from '../api/client';
@@ -127,6 +128,13 @@ export default function AddSheet({ open, onClose, date, onEntryAdded }: Props) {
     setNewFoodOpen(true);
   };
 
+  const handleManualEntry = () => {
+    setScanOpen(false);
+    setNewFoodBarcode(null);
+    setNewFoodPrefill(null);
+    setNewFoodOpen(true);
+  };
+
   return (
     <>
       <Drawer anchor="bottom" open={open} onClose={onClose}>
@@ -146,14 +154,22 @@ export default function AddSheet({ open, onClose, date, onEntryAdded }: Props) {
               onChange={(e) => setQuery(e.target.value)}
             />
           </Box>
-          <Stack direction="row" spacing={1} sx={{ px: 2, pb: 1 }}>
+          <Stack direction="row" spacing={1} sx={{ px: 2, pb: 1, flexWrap: 'wrap', rowGap: 1 }}>
             <Button
               startIcon={<CameraAltIcon />}
               variant="outlined"
               size="small"
               onClick={() => setScanOpen(true)}
             >
-              Neue Zutat
+              Zutat scannen
+            </Button>
+            <Button
+              startIcon={<EditIcon />}
+              variant="outlined"
+              size="small"
+              onClick={handleManualEntry}
+            >
+              Zutat manuell
             </Button>
             <Button
               startIcon={<RestaurantIcon />}
@@ -210,7 +226,12 @@ export default function AddSheet({ open, onClose, date, onEntryAdded }: Props) {
         onConfirm={handleQuantityConfirm}
       />
 
-      <BarcodeScanDialog open={scanOpen} onClose={() => setScanOpen(false)} onDetected={handleBarcodeDetected} />
+      <BarcodeScanDialog
+        open={scanOpen}
+        onClose={() => setScanOpen(false)}
+        onDetected={handleBarcodeDetected}
+        onManualEntry={handleManualEntry}
+      />
 
       <NewFoodDialog
         open={newFoodOpen}
