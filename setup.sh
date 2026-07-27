@@ -157,13 +157,22 @@ setup_tls() {
   local cert="${tls_dir}/cert.pem"
   local key="${tls_dir}/key.pem"
 
+  sudo mkdir -p "${tls_dir}"
+  # Wie beim Datenverzeichnis: Synology root_squash bildet den root-Nutzer aus
+  # dem Docker-Container auf einen anonymen Nutzer ohne Sonderrechte ab, daher
+  # muss das Verzeichnis selbst (nicht nur die Dateien) für alle lesbar/
+  # durchsuchbar sein, sonst kann der Container beim nächsten Neustart nicht
+  # mehr auf das Zertifikat zugreifen ("No TLS certificate found" trotz
+  # vorhandener Datei).
+  sudo chmod 777 "${tls_dir}"
+
   if [[ -f "${cert}" && -f "${key}" ]]; then
+    sudo chmod 644 "${cert}" "${key}"
     ok "TLS-Zertifikat bereits vorhanden (${cert})."
     return
   fi
 
   info "Generiere selbstsigniertes TLS-Zertifikat für '${TLS_HOSTNAME}'..."
-  sudo mkdir -p "${tls_dir}"
 
   local lan_ip
   lan_ip="$(hostname -I 2>/dev/null | awk '{print $1}')"
@@ -176,8 +185,7 @@ setup_tls() {
     -addext "subjectAltName=${san}" \
     >/dev/null 2>&1
 
-  sudo chmod 644 "${cert}"
-  sudo chmod 644 "${key}"
+  sudo chmod 644 "${cert}" "${key}"
 
   ok "TLS-Zertifikat erstellt: ${cert}"
 }

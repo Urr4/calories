@@ -20,13 +20,20 @@ ensure_tls_cert() {
   local cert="${tls_dir}/cert.pem"
   local key="${tls_dir}/key.pem"
 
+  sudo mkdir -p "${tls_dir}"
+  # Verzeichnis muss (wie das Datenverzeichnis) für alle lesbar/durchsuchbar
+  # sein, da Synologys root_squash den root-Nutzer im Container auf einen
+  # rechtelosen anonymen Nutzer abbildet - sonst schlägt der Zugriff auf das
+  # Zertifikat bei künftigen Container-Neustarts sporadisch fehl.
+  sudo chmod 777 "${tls_dir}"
+
   if [[ -f "${cert}" && -f "${key}" ]]; then
+    sudo chmod 644 "${cert}" "${key}"
     echo "==> TLS-Zertifikat vorhanden (${cert})."
     return
   fi
 
   echo "==> Kein TLS-Zertifikat gefunden — generiere eines für '${TLS_HOSTNAME}'..."
-  sudo mkdir -p "${tls_dir}"
 
   local lan_ip
   lan_ip="$(hostname -I 2>/dev/null | awk '{print $1}')"
