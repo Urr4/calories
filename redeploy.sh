@@ -7,6 +7,43 @@ STACK="calories"
 IMAGE="calories:latest"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+DATA_ROOT="/volume1/cloudstorage/docker-swarm-data"
+TLS_HOSTNAME="${TLS_HOSTNAME:-pi1}"
+
+# ── 0. TLS-Zertifikat sicherstellen (für Kamera-Zugriff per HTTPS) ───────────
+# redeploy.sh wird auch für spätere Updates genutzt (nicht nur setup.sh beim
+# Erstdeployment) — daher muss auch hier sichergestellt sein, dass das
+# selbstsignierte Zertifikat existiert, sonst startet das Backend keinen
+# HTTPS-Listener und https://pi1:3443 antwortet nicht mit TLS.
+ensure_tls_cert() {
+  local tls_dir="${DATA_ROOT}/calories/tls"
+  local cert="${tls_dir}/cert.pem"
+  local key="${tls_dir}/key.pem"
+
+  if [[ -f "${cert}" && -f "${key}" ]]; then
+    echo "==> TLS-Zertifikat vorhanden (${cert})."
+    return
+  fi
+
+  echo "==> Kein TLS-Zertifikat gefunden — generiere eines für '${TLS_HOSTNAME}'..."
+  sudo mkdir -p "${tls_dir}"
+
+  local lan_ip
+  lan_ip="$(hostname -I 2>/dev/null | awk '{print $1}')"
+  local san="DNS:${TLS_HOSTNAME},DNS:localhost,IP:127.0.0.1"
+  [[ -n "${lan_ip}" ]] && san="${san},IP:${lan_ip}"
+
+  sudo openssl req -x509 -newkey rsa:2048 -sha256 -days 3650 -nodes \
+    -keyout "${key}" -out "${cert}" \
+    -subj "/CN=${TLS_HOSTNAME}" \
+    -addext "subjectAltName=${san}" \
+    >/dev/null 2>&1
+  sudo chmod 644 "${cert}" "${key}"
+
+  echo "==> TLS-Zertifikat erstellt: ${cert}"
+}
+ensure_tls_cert
+
 # ── 1. Image bauen (ARM64 für Raspberry Pi) ───────────────────────────────────
 echo "==> Baue ${IMAGE} …"
 docker build --platform linux/arm64 -t "${IMAGE}" "${SCRIPT_DIR}"
