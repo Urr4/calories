@@ -64,6 +64,21 @@ Food Facts erlaubt das für Lesezugriffe).
 `DB_PATH` steuert den Speicherort der SQLite-Datei (Default:
 `backend/data/calories.db`).
 
+### HTTPS für Kamera-Zugriff (Barcode-Scan)
+
+Browser erlauben `getUserMedia` (Kamera-Zugriff) nur in einem "secure
+context" – HTTPS oder `localhost`. Reines `http://pi1:3003` reicht dafür
+nicht, unabhängig von erteilten Berechtigungen. `setup.sh` generiert deshalb
+beim Deployment ein selbstsigniertes TLS-Zertifikat (siehe `setup_tls()`,
+liegt auf der NAS unter `.../calories/tls/{cert,key}.pem`, also persistent).
+Das Backend startet automatisch zusätzlich einen HTTPS-Listener (Port 3443,
+steuerbar über `HTTPS_PORT`/`TLS_CERT_PATH`/`TLS_KEY_PATH`), sobald dort ein
+Zertifikat gefunden wird – ansonsten läuft nur HTTP (z. B. lokale
+Entwicklung). Barcode-Scan funktioniert daher nur über `https://pi1:3443`;
+der Browser zeigt dort einmalig eine Zertifikatswarnung (selbstsigniert), die
+einmal pro Gerät bestätigt werden muss ("Erweitert" -> "Trotzdem
+fortfahren"). Zertifikat neu generieren: `./setup.sh --wipe-tls`.
+
 ## Lokal per Docker starten (ohne NAS, ohne Internet)
 
 ```bash
@@ -71,7 +86,8 @@ docker compose -f docker-compose.local.yml up --build
 ```
 
 Läuft komplett lokal: SQLite in einem lokalen Docker-Volume, `OFF_MODE=stub`,
-erreichbar unter `http://localhost:3003`.
+erreichbar unter `http://localhost:3003`. Kamera-Zugriff funktioniert hier
+trotz HTTP, da `localhost` von Browsern als secure context behandelt wird.
 
 ## Deployment (Docker Swarm auf Raspberry Pi + Synology NAS)
 
@@ -108,8 +124,11 @@ docker build --platform linux/arm64 -t calories:latest .
 docker stack deploy -c docker-compose.yml calories
 ```
 
-Erreichbar unter `http://pi1:3003`. Die SQLite-Datenbank liegt persistent auf
-der NAS unter `/volume1/cloudstorage/docker-swarm-data/calories`.
+Erreichbar unter `http://pi1:3003` bzw. `https://pi1:3443` (Kamera-Zugriff).
+Ohne das `setup.sh`-Skript fehlt allerdings das TLS-Zertifikat – dann muss es
+manuell erzeugt werden (siehe `setup_tls()` in `setup.sh`). Die
+SQLite-Datenbank liegt persistent auf der NAS unter
+`/volume1/cloudstorage/docker-swarm-data/calories`.
 
 ## Projektstruktur
 

@@ -10,13 +10,15 @@
 #
 # Optionen:
 #   ./setup.sh --wipe-db     Datenbank löschen (Achtung: alle Einträge weg!)
+#   ./setup.sh --wipe-tls    TLS-Zertifikat neu generieren
 #
 # Was das Skript tut:
 #   1. Pakete installieren (docker, nfs-common) falls nötig
 #   2. NFS-Share mounten falls nötig
 #   3. Datenverzeichnis auf der NAS anlegen und Berechtigungen setzen
-#   4. Image bauen (ARM64 für Raspberry Pi)
-#   5. Stack deployen
+#   4. Selbstsigniertes TLS-Zertifikat generieren (für Kamera-Zugriff per HTTPS)
+#   5. Image bauen (ARM64 für Raspberry Pi)
+#   6. Stack deployen
 
 set -euo pipefail
 
@@ -28,6 +30,10 @@ DATA_ROOT="${MOUNT_POINT}/docker-swarm-data"
 
 IMAGE="calories:latest"
 STACK="calories"
+
+# Hostname/IP, unter denen der Pi im LAN erreichbar ist — landen als Subject
+# Alternative Names im selbstsignierten TLS-Zertifikat (siehe setup_tls()).
+TLS_HOSTNAME="${TLS_HOSTNAME:-pi1}"
 
 # Open-Food-Facts-Modus für das Deployment — "live" ruft die echte API auf,
 # "stub" nutzt lokale Testdaten (siehe backend/src/off-stub-data.json).
@@ -137,7 +143,59 @@ setup_directories() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 4. Image bauen
+# 4. Selbstsigniertes TLS-Zertifikat generieren
+# ─────────────────────────────────────────────────────────────────────────────
+# Kamera-Zugriff (Barcode-Scan) funktioniert in Browsern nur über einen
+# "secure context" (HTTPS oder localhost) — reines http://pi1:3003 reicht
+# dafür nicht, egal welche Berechtigungen erteilt wurden. Das Backend startet
+# daher zusätzlich einen HTTPS-Listener (Port 3443), sobald hier ein
+# Zertifikat liegt. Beim ersten Zugriff über https://pi1:3443 zeigt der
+# Browser einmalig eine Zertifikatswarnung (selbstsigniert) — "Erweitert" ->
+# "Trotzdem fortfahren" bestätigen, danach funktioniert die Kamera.
+setup_tls() {
+  local tls_dir="${DATA_ROOT}/calories/tls"
+  local cert="${tls_dir}/cert.pem"
+  local key="${tls_dir}/key.pem"
+
+  if [[ -f "${cert}" && -f "${key}" ]]; then
+    ok "TLS-Zertifikat bereits vorhanden (${cert})."
+    return
+  fi
+
+  info "Generiere selbstsigniertes TLS-Zertifikat für '${TLS_HOSTNAME}'..."
+  sudo mkdir -p "${tls_dir}"
+
+  local lan_ip
+  lan_ip="$(hostname -I 2>/dev/null | awk '{print $1}')"
+  local san="DNS:${TLS_HOSTNAME},DNS:localhost,IP:127.0.0.1"
+  [[ -n "${lan_ip}" ]] && san="${san},IP:${lan_ip}"
+
+  sudo openssl req -x509 -newkey rsa:2048 -sha256 -days 3650 -nodes \
+    -keyout "${key}" -out "${cert}" \
+    -subj "/CN=${TLS_HOSTNAME}" \
+    -addext "subjectAltName=${san}" \
+    >/dev/null 2>&1
+
+  sudo chmod 644 "${cert}"
+  sudo chmod 644 "${key}"
+
+  ok "TLS-Zertifikat erstellt: ${cert}"
+}
+
+wipe_tls() {
+  local tls_dir="${DATA_ROOT}/calories/tls"
+  warn "Lösche bestehendes TLS-Zertifikat unter ${tls_dir}..."
+  sudo rm -f "${tls_dir}/cert.pem" "${tls_dir}/key.pem"
+  setup_tls
+  if docker service ls --format '{{.Name}}' | grep -q "${STACK}_app"; then
+    info "Starte App-Service neu..."
+    docker service update --force "${STACK}_app"
+    ok "Service neu gestartet."
+  fi
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 6. Image bauen
 # ─────────────────────────────────────────────────────────────────────────────
 build_image() {
   info "Baue ${IMAGE} für linux/arm64 (kann auf dem Pi einige Minuten dauern)..."
@@ -146,7 +204,7 @@ build_image() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 5. Stack deployen
+# 7. Stack deployen
 # ─────────────────────────────────────────────────────────────────────────────
 deploy_stack() {
   info "Deploye Docker-Swarm-Stack '${STACK}'..."
@@ -191,7 +249,12 @@ print_next_steps() {
   echo "════════════════════════════════════════════════════════════════════"
   echo ""
   echo "  App erreichbar unter:"
-  echo "    http://pi1:3003"
+  echo "    http://pi1:3003   (kein Kamera-Zugriff)"
+  echo "    https://pi1:3443  (mit Kamera-Zugriff für Barcode-Scan)"
+  echo ""
+  echo "  Beim ersten Aufruf von https://pi1:3443 zeigt der Browser eine"
+  echo "  Zertifikatswarnung (selbstsigniert) — \"Erweitert\" -> \"Trotzdem"
+  echo "  fortfahren\" bestätigen. Danach funktioniert der Kamera-Zugriff."
   echo ""
   echo "  Nächste Schritte:"
   echo "    1. App öffnen, ersten Nutzer anlegen und Tagesziele einstellen."
@@ -209,6 +272,7 @@ print_next_steps() {
 main() {
   case "${1:-}" in
     --wipe-db) wipe_db; exit 0 ;;
+    --wipe-tls) wipe_tls; exit 0 ;;
   esac
 
   echo ""
@@ -224,6 +288,7 @@ main() {
   install_packages
   setup_nfs
   setup_directories
+  setup_tls
   build_image
   deploy_stack
   print_next_steps

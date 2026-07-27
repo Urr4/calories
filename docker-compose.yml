@@ -14,7 +14,11 @@
 #       docker build --platform linux/arm64 -t calories:latest .
 #       docker stack deploy -c docker-compose.yml calories
 #
-#  Erreichbar unter: http://pi1:3003
+#  Erreichbar unter:
+#    http://pi1:3003   (kein Kamera-Zugriff möglich - Browser blockieren
+#                        getUserMedia außerhalb von HTTPS/localhost)
+#    https://pi1:3443  (selbstsigniertes Zertifikat, siehe setup.sh;
+#                        Zertifikatswarnung im Browser einmalig bestätigen)
 # ─────────────────────────────────────────────────────────────────────────────
 
 services:
@@ -22,6 +26,7 @@ services:
     image: calories:latest
     environment:
       PORT: "3003"
+      HTTPS_PORT: "3443"
       DB_PATH: /data/calories.db
       OFF_MODE: ${OFF_MODE:-live}
     volumes:
@@ -31,6 +36,9 @@ services:
     ports:
       - target: 3003
         published: 3003
+        mode: host
+      - target: 3443
+        published: 3443
         mode: host
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3003/api/persons"]

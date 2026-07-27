@@ -26,6 +26,6 @@ echo "==> Aktualisiere App-Service auf neues Image …"
 docker service update --force --image "${IMAGE}" "${STACK}_app"
 
 echo ""
-echo "✓ Deployment abgeschlossen. Erreichbar unter: http://pi1:3003"
+echo "✓ Deployment abgeschlossen. Erreichbar unter: http://pi1:3003 (https://pi1:3443 für Kamera-Zugriff)"
 echo ""
 docker stack ps "${STACK}" --no-trunc

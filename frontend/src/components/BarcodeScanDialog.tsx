@@ -68,7 +68,13 @@ export default function BarcodeScanDialog({ open, onClose, onDetected, onManualE
         }
       )
       .catch((err) => {
-        setError('Kamera konnte nicht gestartet werden. Bitte Berechtigung prüfen.');
+        if (!window.isSecureContext) {
+          setError(
+            'Kamera-Zugriff erfordert eine sichere Verbindung (HTTPS). Bitte die App über https:// aufrufen.'
+          );
+        } else {
+          setError('Kamera konnte nicht gestartet werden. Bitte Berechtigung prüfen.');
+        }
         console.error('Failed to start barcode scanner', err);
       });
   }, [onDetected]);
